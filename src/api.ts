@@ -5,8 +5,11 @@ const initSqlJs = require('sql.js');
  * values.
  */
 async function init() {
-    const sql = await initSqlJs({ });
+    const sql = await initSqlJs({ 
+        
+    });
     const db = new sql.Database();
+    console.log(db)
 
     // Create the pets table and add some values
     db.run("CREATE TABLE pets (id int, name varchar);");
@@ -78,12 +81,18 @@ export const getPets = ((async (event) => {
 export const getPetById = ((async (event) => {
     // Initialize the DB
     let db = await init();
+    console.log(db)
+
+    let petId : Number = 0
+    if (event.pathParameters != undefined) {
+        petId = Number(event.pathParameters.id)
+    }
 
     // Prepare an sql statement
     const stmt = db.prepare("SELECT * FROM pets WHERE id=:id ");
 
     // Bind values to the parameters and fetch the results of the query
-    const result = stmt.getAsObject({':id' : 1});
+    const result = stmt.getAsObject({':id' : petId});
 
     return { statusCode: 200, body: JSON.stringify(result) }
 }))
@@ -132,7 +141,8 @@ export const getLostPets = ((async (event) => {
     let db = await init();
 
     // TODO: Finish implementation here
-
-    return { statusCode: 200 }
+    const result = db.exec("SELECT * FROM pets WHERE pets.id NOT IN (SELECT pet_id FROM owners_pets)");
+    const prettyRestults = serialize(result);
+    return { statusCode: 200,  body: JSON.stringify(prettyRestults) }
 }))
 
